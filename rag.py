@@ -23,31 +23,40 @@ class Retriever:
             n_results=k,
         )
         print(retrieval_results)
-        return retrieval_results
+        print('-----------------')
+        return retrieval_results["metadatas"][0]
 
 class Generator:
     def __init__(self, openai_model="gpt-3.5-turbo"):
         self.openai_model = openai_model
-        self.prompt_template = """
-            You're a helpful assistant. Based on the user's question, provide a recommendation from the following candidate profiles in Japanese:
+        self.prompt_template_profile = """
+            {profile}
+        """
+        self.prompt_template_ques = """
+            You're a helpful assistant. 
+            Based on the profiles and user's question, 
+            provide a recommendation from the aboving candidate profiles in Japanese:
 
             Question: {user_question}
         """
 
-    def generate_response(self, retrieval_results):
+    def generate_response(self, retrieval_results, questions):
         prompts = []
         for result in retrieval_results:
-            prompt = self.prompt_template.format(user_question=result)
+            prompt = self.prompt_template_profile.format(profile=result.get('info'))
             prompts.append(prompt)
         prompts.reverse()
+        self.prompt_template_ques.format(user_question=questions)
+        prompts.append(self.prompt_template_ques)
+        print(prompts)
 
         response = openai.OpenAI().chat.completions.create(
             model=self.openai_model,
-            messages=[{"role": "assistant", "content": prompt}],
+            messages=[{"role": "assistant", "content": prompt} for prompt in prompts],
             temperature=0,
         )
 
-        return response.choices[0].message
+        return response.choices[0].message.content
 
 class Chatbot:
     def __init__(self):
@@ -57,7 +66,7 @@ class Chatbot:
     def answer(self, input):
         k = 5  # Number of profiles to retrieve
         retrieval_results = self.retriever.get_retrieval_results(input, k)
-        return self.generator.generate_response(retrieval_results)
+        return self.generator.generate_response(retrieval_results, user_input)
 
 # Creating an instance of the Chatbot class
 chatbot = Chatbot()
