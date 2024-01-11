@@ -3,7 +3,7 @@ from chromadb.utils import embedding_functions
 import openai
 import os
 import pandas as pd
-from embedding import CollectionDB
+from gpt_embedding import CollectionDB
 
 # Initialize ChromaDB client
 client = chromadb.Client()
@@ -42,7 +42,6 @@ class Generator:
         prompts.reverse()
         messages=[{"role": "system", "content": prompt} for prompt in prompts]
         messages.append({"role": "user", "content": self.prompt_template_ques.format(user_question=questions)})
-        print(messages)
         response = openai.OpenAI().chat.completions.create(
             model=self.openai_model,
             messages=messages
