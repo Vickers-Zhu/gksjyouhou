@@ -1,18 +1,16 @@
 import chromadb
-from chromadb.utils import embedding_functions
 import openai
-import os
-import pandas as pd
 from gpt_embedding import CollectionDB
 
-# Initialize ChromaDB client
+# Initialize ChromaDB client自動車業界に強い人材はいる？
 client = chromadb.Client()
 client.heartbeat()
+
 
 class Retriever:
     def __init__(self, collection_name="talent_profiles"):
         self.collection_name = collection_name
-    
+
     def get_retrieval_results(self, input, k):
         cdb = CollectionDB("output/embedded_members.csv", self.collection_name)
         cdb.add_data()
@@ -26,6 +24,7 @@ class Retriever:
         print('-----------------')
         return retrieval_results["metadatas"][0]
 
+
 class Generator:
     def __init__(self, openai_model="gpt-3.5-turbo"):
         self.openai_model = openai_model
@@ -37,17 +36,21 @@ class Generator:
     def generate_response(self, retrieval_results, questions):
         prompts = []
         for result in retrieval_results:
-            prompt = self.prompt_template_profile.format(profile=result.get('info'))
+            prompt = self.prompt_template_profile.format(
+                profile=result.get('info'))
             prompts.append(prompt)
         prompts.reverse()
-        messages=[{"role": "system", "content": prompt} for prompt in prompts]
-        messages.append({"role": "user", "content": self.prompt_template_ques.format(user_question=questions)})
+        messages = [{"role": "system", "content": prompt}
+                    for prompt in prompts]
+        messages.append({"role": "user", "content": self.prompt_template_ques.format(
+            user_question=questions)})
         response = openai.OpenAI().chat.completions.create(
             model=self.openai_model,
             messages=messages
         )
 
         return response.choices[0].message.content
+
 
 class Chatbot:
     def __init__(self):
@@ -58,6 +61,7 @@ class Chatbot:
         k = 5  # Number of profiles to retrieve
         retrieval_results = self.retriever.get_retrieval_results(input, k)
         return self.generator.generate_response(retrieval_results, input)
+
 
 # Creating an instance of the Chatbot class
 chatbot = Chatbot()
